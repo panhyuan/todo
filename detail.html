@@ -329,6 +329,30 @@
                 font-weight: 600;
                 color: var(--text-main);
                 font-size: 1.05rem;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 4px;
+                transition: background 0.2s ease;
+            }
+
+            .tech-name:hover {
+                background: var(--hover-bg);
+            }
+
+            .tech-name.editing {
+                display: none;
+            }
+
+            .edit-input {
+                flex: 1;
+                background: var(--input-bg);
+                border: 2px solid var(--primary);
+                border-radius: 6px;
+                padding: 8px 12px;
+                color: var(--text-main);
+                font-size: 1.05rem;
+                font-weight: 600;
+                outline: none;
             }
 
             .delete-item-btn {
@@ -551,6 +575,67 @@
                 renderDetail();
             }
 
+            function editItem(itemId, event) {
+                event.stopPropagation();
+
+                // 隐藏所有正在编辑的输入框
+                document.querySelectorAll('.edit-input').forEach(input => {
+                    const span = input.previousElementSibling;
+                    if (span) {
+                        span.classList.remove('editing');
+                    }
+                    input.remove();
+                });
+
+                const span = event.target;
+                const currentText = span.textContent;
+
+                // 创建输入框
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'edit-input';
+                input.value = currentText;
+
+                // 插入输入框
+                span.classList.add('editing');
+                span.parentNode.insertBefore(input, span.nextSibling);
+
+                // 聚焦并选中文字
+                input.focus();
+                input.select();
+
+                // 保存编辑
+                const saveEdit = () => {
+                    const newText = input.value.trim();
+                    if (newText && newText !== currentText) {
+                        const list = getCurrentList();
+                        const item = list.items.find((i) => i.id === itemId);
+                        if (item) {
+                            item.text = newText;
+                            saveLists();
+                        }
+                    }
+                    renderDetail();
+                };
+
+                // 取消编辑
+                const cancelEdit = () => {
+                    renderDetail();
+                };
+
+                // 事件监听
+                input.addEventListener('blur', saveEdit);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveEdit();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cancelEdit();
+                    }
+                });
+            }
+
             function renderDetail() {
                 const list = getCurrentList();
 
@@ -596,7 +681,7 @@
                             onchange="toggleItem(${item.id})"
                         >
                     </div>
-                    <span class="tech-name">${escapeHtml(item.text)}</span>
+                    <span class="tech-name" ondblclick="editItem(${item.id}, event)" title="双击编辑">${escapeHtml(item.text)}</span>
                     <button class="delete-item-btn" onclick="deleteItem(${item.id}, event)">
                         🗑️ 删除
                     </button>
